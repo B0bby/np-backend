@@ -1,0 +1,19 @@
+{
+  "name": "np-backend",
+  "version": "0.0.1",
+  "description": "Backend for Nashville Playlist app",
+  "main": "server.js",
+  "dependencies": {
+    "cookie-parser": "^1.4.3",
+    "express": "^4.15.3",
+    "pug": "^2.0.0-rc.1",
+    "request": "^2.81.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "bob",
+  "license": "ISC"
+}
