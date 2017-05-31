@@ -7,3 +7,6 @@ exports.client_secret = function(){
 exports.redirect_uri = function(){
     return 'http://192.168.1.164:3000/callback';
 }
+exports.stateKey = function(){
+  return 'spotify_auth_state';
+}

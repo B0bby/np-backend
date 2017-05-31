@@ -10,17 +10,19 @@ router.get('/', function(req, res) {
   // your application requests refresh and access tokens
   // after checking the state parameter
 
+  console.log(req.query.code);
+  
   var code = req.query.code || null;
   var state = req.query.state || null;
-  var storedState = req.cookies ? req.cookies[stateKey] : null;
-
+  var storedState = req.cookies ? req.cookies[secrets.stateKey()] : null;
+  
   if (state === null || state !== storedState) {
     res.redirect('/#' +
       querystring.stringify({
         error: 'state_mismatch'
       }));
   } else {
-    res.clearCookie(stateKey);
+    res.clearCookie(secrets.stateKey());
     var authOptions = {
       url: 'https://accounts.spotify.com/api/token',
       form: {

@@ -5,8 +5,6 @@ var cookieParser = require('cookie-parser');
 var secrets = require('../secrets.js');
 var router = express.Router();
 
-var stateKey = 'spotify_auth_state';
-
 var generateRandomString = function(length) {
   var text = '';
   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -20,7 +18,7 @@ var generateRandomString = function(length) {
 router.get('/', function(req, res) {
 
   var state = generateRandomString(16);
-  res.cookie(stateKey, state);
+  res.cookie(secrets.stateKey(), state);
 
   // your application requests authorization
   var scope = 'user-read-private user-read-email';  
