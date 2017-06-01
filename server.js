@@ -4,53 +4,25 @@ var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var secrets = require('./secrets.js');
 
+var localtop = require('./localtop.js');
+
 var app = express();
-app.set('view engine', 'pug');
-app.set('views', './views');
+// app.set('view engine', 'pug');
+// app.use(express.static(__dirname + '/views'))
+//    .use(cookieParser());
 
-app.get('/', (req, res) => {
-  var sgOptions = {
-    url: "https://api.seatgeek.com/2/events?geoip=true&per_page=500&datetime_utc.gte=2017-05-22&datetime_utc.lte=2017-05-29&taxonomies.name=concert&taxonomies.name=concerts&client_id=NzU1ODIxMXwxNDk0NTQ4NzY2Ljk2"
-  }
-
-  request.get(sgOptions, (error, result, body) => {
-    var events = JSON.parse(body).events;
-    getPrimaryArtistIds(events, renderPage, res);
-  })
+app.get('/', (req, res) => {  
+  localtop.getLocalTop(res);
 });
 
-function getPrimaryArtistIds(events, callback, res) {
-  var ids = [];
-  events.map(function(e) {
-    e.performers.forEach(function(p) {
-      if (p.primary) {
-        ids.push(p.id);
-      }
-    })
-  });
-  getArtistsTopTrack(ids, callback, res);
-}
+var callback = require('./routes/callback.js');
+app.use('/callback', callback);
 
-function getArtistsTopTrack(artists, callback, res) {
-  artists.map((e) => {
-    var paOptions = {
-      url: "https://api.spotify.com/v1/artists/" + e +"/top-tracks",
-      body: {
-        country: "ISO 3166-2:US"
-      }
-    }
-    console.log(paOptions.url);
-    request.post(paOptions, (e, r, b) => {
-      console.log(b);
-      var artist = JSON.parse(b);
+var refresh_token = require('./routes/refresh_token.js');
+app.use('/refresh_token', refresh_token);
 
-    })
-  });
-
-}
-
-function renderPage(res, events) {
-  res.send(events);
-}
+var login = require('./routes/login.js');
+app.use('/login', login);
 
 app.listen(3000);
+console.log("App listening on port 3000");
