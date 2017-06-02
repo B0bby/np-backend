@@ -1,10 +1,6 @@
 // Get local artists' top tracks
 // #######################################################
 // # NOTES TO BOB / JOEY
-// # Bob - you will probably have to use my client id / secret to make the playlis stuff work
-// # I will email it to you
-// #
-// #
 // #
 // ######################################################
 
@@ -33,6 +29,8 @@ router.get('/', function(req, res) {
       getArtistIds(resolve);
     });
     
+	  // JRL: We will need to refactor this to pull in the entire Artist eventually
+	  //      For now, I left it as-is so that I didn't break anything.
 	  idPromise.then(() => {
         let topTracksPromise = new Promise((resolve, reject) => {
         getTopTracks(resolve);
@@ -44,7 +42,6 @@ router.get('/', function(req, res) {
 		});
 		  
 		playlistPromise.then(() => {
-			console.log('playlistID', playlist[0]);
 		  let addTracksPromise = new Promise((resolve, reject) => {
 	        addTracks(resolve);
 		  });
@@ -60,7 +57,6 @@ router.get('/', function(req, res) {
 
   });
 });
-
 
 function getLocalEvents(callback){
   var seatGeekOptions = {
@@ -127,6 +123,7 @@ function getTopTrack(id, callback){
     headers: { 'Authorization': 'Bearer ' + secrets.token() },
   }
   request.get(ops, (err, res, body) => {    
+	// JRL: I added this because it was pulling in some undefined tracks
 	var track = JSON.parse(body).tracks[0] || null;
 	if (track) {
 		try{ tracks.push(track); }
@@ -151,28 +148,19 @@ function createPlaylist(callback){
 
 
 function addTracks(callback) {
-
-
   var trackUris = tracks.map((track) => {
 	if (track) return track.uri;
   });
 
-  console.log('trackUris', trackUris);
-  
   var ops = {
 	 url: "https://api.spotify.com/v1/users/" + secrets.spotify_user_id() + "/playlists/" + playlist[0].id + "/tracks",
 	 json: { "uris": trackUris },
 	 headers: { 'Authorization': 'Bearer ' + secrets.token(), 'Content-Type': 'application/json' },
 	}
   request.post(ops, (err, res, body) => {
-	//console.log('playlisterr', err);
-	//console.log('playlistres', res);
-	//console.log('playlistbody', body);
-	 
     callback();
   }) 
   
 }
-
 
 module.exports = router;
