@@ -10,17 +10,15 @@ router.get('/', function(req, res) {
   // your application requests refresh and access tokens
   // after checking the state parameter
 
-  console.log(req.query.code);
+  console.log("REQ " + req);
+  console.log("CODE " + req.query.code);
   
   var code = req.query.code || null;
   var state = req.query.state || null;
   var storedState = req.cookies ? req.cookies[secrets.stateKey()] : null;
   
   if (state === null || state !== storedState) {
-    res.redirect('/#' +
-      querystring.stringify({
-        error: 'state_mismatch'
-      }));
+    res.send('State Mismatch');
   } else {
     res.clearCookie(secrets.stateKey());
     var authOptions = {
@@ -42,28 +40,10 @@ router.get('/', function(req, res) {
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
 
-        var options = {
-          url: 'https://api.spotify.com/v1/me',
-          headers: { 'Authorization': 'Bearer ' + access_token },
-          json: true
-        };
-
-        // use the access token to access the Spotify Web API
-        request.get(options, function(error, response, body) {
-          console.log(body);
-        });
-
         // we can also pass the token to the browser to make requests from there
-        res.redirect('/#' +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token
-          }));
+        res.send(access_token);
       } else {
-        res.redirect('/#' +
-          querystring.stringify({
-            error: 'invalid_token'
-          }));
+        res.send('invalid_token');
       }
     });
   }

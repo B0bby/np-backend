@@ -1,15 +1,19 @@
 // Get local artists' top tracks
 
+var express = require('express');
 var request = require('request');
+var secrets = require('../secrets.js');
+
+var router = express.Router();
 
 var events = [];
 var tracks = [];
 var names = [];
 var ids = [];
 
-var token = 'BQDYFZ3u_JgXDcmk3Xq3rQxqB7tOFikw7EYuEWLl--ldwsea52rIwezyk34TH_l9hLh9_M3Dhyg-n1MCy8b0bbuIwh2i8JXJmP9NsPC84NEYvOqPNz2tm7W-SqhWWw4Hcoc85C24xGsIzdF2PSu_AoUopHKCtGk';
-
-function getLocalTop(res){
+router.get('/', function(req, res) {
+  
+  events = tracks = names = ids = [];
   
   let eventPromise = new Promise((resolve, reject) => {
     getLocalEvents(resolve);
@@ -28,12 +32,10 @@ function getLocalTop(res){
       
       trackPromise.then(() => {
         res.send(tracks);
-      })
+      });
     });
-  })
-
-  
-}
+  });
+});
 
 
 function getLocalEvents(callback){
@@ -73,7 +75,7 @@ function getId(name, callback){
   var ops = {
     url: "https://api.spotify.com/v1/search",
     qs: { q: name, type: 'artist' },
-    headers: { 'Authorization': 'Bearer ' + token },
+    headers: { 'Authorization': 'Bearer ' + secrets.token() },
   }
   request.get(ops, (err, res, body) => {
     var result = JSON.parse(body);
@@ -98,15 +100,14 @@ function getTopTracks(callback) {
 function getTopTrack(id, callback){  
   var ops = {
     url: "https://api.spotify.com/v1/artists/" + id +"/top-tracks?country=US",
-    headers: { 'Authorization': 'Bearer ' + token },
+    headers: { 'Authorization': 'Bearer ' + secrets.token() },
   }
   request.get(ops, (err, res, body) => {    
-    tracks.push(JSON.parse(body));
+    try{ tracks.push(JSON.parse(body).tracks[0]); }
+    catch(e) {}
     callback();
   })
   
 }
 
-module.exports = {
-  getLocalTop: getLocalTop
-}
+module.exports = router;
