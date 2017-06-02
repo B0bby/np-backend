@@ -19,7 +19,6 @@ var tracks = [];
 var names = [];
 var ids = [];
 var playlist = [];
-var spotifyUserId = 'joeschmoey';
 var playlistBaseName = 'Music City Playlist';
 
 router.get('/', function(req, res) {
@@ -140,7 +139,7 @@ function getTopTrack(id, callback){
 
 function createPlaylist(callback){
   var ops = {
-	 url: "https://api.spotify.com/v1/users/" + spotifyUserId + "/playlists",
+	 url: "https://api.spotify.com/v1/users/" + secrets.spotify_user_id() + "/playlists",
 	 json: { "name": playlistBaseName, "public": false },
 	 headers: { 'Authorization': 'Bearer ' + secrets.token(), 'Content-Type': 'application/json' },
 	}
@@ -161,7 +160,7 @@ function addTracks(callback) {
   console.log('trackUris', trackUris);
   
   var ops = {
-	 url: "https://api.spotify.com/v1/users/" + spotifyUserId + "/playlists/" + playlist[0].id + "/tracks",
+	 url: "https://api.spotify.com/v1/users/" + secrets.spotify_user_id() + "/playlists/" + playlist[0].id + "/tracks",
 	 json: { "uris": trackUris },
 	 headers: { 'Authorization': 'Bearer ' + secrets.token(), 'Content-Type': 'application/json' },
 	}
