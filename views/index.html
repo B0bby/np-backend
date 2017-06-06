@@ -9,6 +9,9 @@
         padding: 20px;
         margin: 10px;
       }
+	  .playlist-table-header {
+		font-weight: bold;
+	  }
     </style>
   </head>
 
@@ -30,9 +33,35 @@
       function getKey() {        
         $.ajax({
           url: '/localtop'
-        }).done((data) => {
-          console.log(data);
-          $('#output').append(data);
+        }).done((events) => {
+          console.log(events);
+           
+			var table = $("<table/>").addClass('playlist-table');
+			var header = $('<thead/>').addClass('playlist-table-header');
+			var row = $("<tr/>");
+			row.append($('<td/>').text('Event title'));
+			row.append($('<td/>').text('Seatgeek artist name'));
+			row.append($('<td/>').text('Spotify artist name'));
+			row.append($('<td/>').text('Popularity'));
+			row.append($('<td/>').text('Track name'));
+			row.append($('<td/>').text('Venue name'));
+			row.append($('<td/>').text('Venue city'));
+			header.append(row);
+			table.append(header);
+			
+			events.forEach((event) => {
+				var row = $("<tr/>");
+				row.append($("<td/>").text(event.title || ''));
+				row.append($("<td/>").text(event.seatgeek_artist.name || ''));
+				row.append($("<td/>").text((event.spotify_artist ? event.spotify_artist.name : '')));
+				row.append($("<td/>").text((event.top_track ? event.top_track.popularity : '')));
+				row.append($("<td/>").text((event.top_track ? event.top_track.name : '')));
+				row.append($("<td/>").text(event.venue.name || ''));
+				row.append($("<td/>").text(event.venue.city || ''));
+				table.append(row);
+			});
+
+			$('#localtop-output').append(table);
         })
       }
       
