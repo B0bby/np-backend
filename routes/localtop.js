@@ -23,6 +23,7 @@ router.get('/', function(req, res) {
   });
   
   eventPromise.then(() => {
+	parseSeatgeekArtists();
     let spotifyArtistPromise = new Promise((resolve, reject) => {
       getSpotifyArtists(resolve);
     });
@@ -44,7 +45,7 @@ router.get('/', function(req, res) {
 		  
 	        addTracksPromise.then(() => {
 				console.log('playlist', playlist);
-				res.send(events);
+				res.json(events);
             });
 
 		});
@@ -80,19 +81,24 @@ function getSpotifyArtists(callback) {
   })
 }
 
-function getSpotifyArtist(event, callback) {
-  var artist = [];
-  event.performers.forEach((p) => {
-	if (p.primary) {                
-	  artist = p;
-	}
+function parseSeatgeekArtists() {
+  events.forEach((e, i) => {
+	  e.performers.forEach((p) => {
+		if (p.primary) {
+		  events[i].seatgeek_artist = p;
+		  delete events[i].performers;
+		}
+	  });
   });
+}
+
+function getSpotifyArtist(event, callback) {
   var ops = {
     url: "https://api.spotify.com/v1/search",
-    qs: { q: artist.name, type: 'artist' },
+    qs: { q: event.seatgeek_artist.name, type: 'artist' },
     headers: { 'Authorization': 'Bearer ' + secrets.token() },
   }
-  request.get(ops, (err, res, body) => {
+  request.get(ops, (err, res, body) => { 
 	// JRL: I added this because it was pulling in some undefined artists
 	var artist = JSON.parse(body).artists.items[0] || null;
 	if (artist) {
