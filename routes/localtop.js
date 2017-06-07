@@ -16,7 +16,7 @@ var startDate = '2017-06-18'; // needs to be in YYYY-MM-DD format
 var endDate = '2017-06-24';   // needs to be in YYYY-MM-DD format
 var playlistBaseName = 'Music City Playlist';
 
-router.get('/', function(req, res) {
+router.get('/', function(req, res) { 
 
   let eventPromise = new Promise((resolve, reject) => {
     getLocalEvents(resolve);
@@ -92,7 +92,7 @@ function parseSeatgeekArtists() {
   });
 }
 
-function getSpotifyArtist(event, callback) {
+function getSpotifyArtist(event, callback) { 
   var ops = {
     url: "https://api.spotify.com/v1/search",
     qs: { q: event.seatgeek_artist.name, type: 'artist' },
@@ -169,7 +169,7 @@ function addTracks(callback) {
   request.post(ops, (err, res, body) => {
     callback();
   }) 
-  
+   
 }
 
 module.exports = router;
