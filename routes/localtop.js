@@ -10,9 +10,6 @@ var router = express.Router();
 var artists = [];              // events contains all information (spotify_artist, top_track, etc)
 var playlist = [];            // playlist contains information about the playlist
 
-var latitude = '36.1627';     // Nashville latitutde/longitude
-var longitude = '-86.7816';   // default range in Seatgeek query is 30 mi
-var playlistBaseName = 'Music City Playlist';
 
 var latitude = '41.8781';
 var longitude = '-87.6298';
@@ -22,8 +19,12 @@ var latitude = '39.7684';
 var longitude = '-86.1581';
 var playlistBaseName = 'Indy Weekly Playlist';
 
-var startDate = '2017-06-18'; // needs to be in YYYY-MM-DD format
-var endDate = '2017-06-24';   // needs to be in YYYY-MM-DD format
+var latitude = '36.1627';     // Nashville latitutde/longitude
+var longitude = '-86.7816';   // default range in Seatgeek query is 30 mi
+var playlistBaseName = 'Music City Playlist';
+
+var startDate = '2017-06-25'; // needs to be in YYYY-MM-DD format
+var endDate = '2017-07-01';   // needs to be in YYYY-MM-DD format
 
 router.get('/', function(req, res) { 
 
@@ -60,7 +61,6 @@ router.get('/', function(req, res) {
 		    });
 		  
 	        addTracksPromise.then(() => {
-				//console.log('playlist', playlist);
 				res.json(artists);
             });
 
@@ -118,13 +118,15 @@ function getLocalEvents(callback) {
 }
 
 function parseSeatgeekArtists() {
-  artists.forEach((a, i) => {
-	  a.event.performers.forEach((p) => {
-		if (p.primary) {
-		  artists[i].seatgeek_artist = p;
-		  delete artists[i].event.performers;
-		}
-	  });
+	artists.forEach((a, i) => {
+	if (a.event.performers) {
+		a.event.performers.forEach((p) => {
+			if (p.primary) {
+			  artists[i].seatgeek_artist = p;
+			  delete artists[i].event.performers;
+			}
+		  });
+	}
   });
 }
 
@@ -161,7 +163,7 @@ function getSpotifyArtist(artist, callback) {
 function getTopTracks(callback) {
   let requests = artists.reduce((promiseChain, artist) => {
     return promiseChain.then(() => new Promise((resolve) => {
-      if (artist.event.spotify_artist) { 
+      if (artist.spotify_artist) { 
 		getTopTrack(artist, resolve);
 	  } else { resolve(); }
     }));
@@ -174,7 +176,7 @@ function getTopTracks(callback) {
 
 function getTopTrack(artist, callback) {
   var ops = {
-	url: 'https://api.spotify.com/v1/artists/' + event.spotify_artist.id + '/top-tracks?country=US',
+	url: 'https://api.spotify.com/v1/artists/' + artist.spotify_artist.id + '/top-tracks?country=US',
 	headers: { 'Authorization': 'Bearer ' + secrets.token() },
   }
   request.get(ops, (err, res, body) => {    
@@ -208,7 +210,7 @@ function createPlaylist(callback) {
 
 function addTracks(callback) {
   var trackUris = [];
-  artists.forEach((a) => {
+	artists.forEach((a) => {
 	if (a.top_track) trackUris.push(a.top_track.uri);
   });
   

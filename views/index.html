@@ -22,13 +22,13 @@
     
     <script> 
 	
-      function getEvents() {        
+      function getArtists() {
         $.ajax({
           url: '/localtop'
-        }).done((events) => {
+        }).done((artists) => {
 
-          console.log(events);
-           /*
+          console.log(artists);
+           
 			var table = $("<table/>").addClass('table table-hover');
 			var header = $('<thead/>').addClass('playlist-table-header');
 			var row = $("<tr/>");
@@ -44,27 +44,27 @@
 			header.append(row);
 			table.append(header);
 			
-			events.forEach((event, index) => {
+			artists.forEach((artist, index) => {
 				var row = $("<tr/>");
 				row.append($("<td/>").text(index + 1));
-				row.append($("<td/>").text((event.top_track ? event.top_track.name : '')));
-				row.append($("<td/>").text((event.top_track ? event.top_track.popularity : '')));
-				row.append($("<td/>").html((event.spotify_artist && event.spotify_artist.images.length > 0 ? '<img src="' + event.spotify_artist.images[0].url + '" height="32px" width="32px"/>' : '')));
-				row.append($("<td/>").text(event.seatgeek_artist.name || ''));
-				row.append($("<td/>").text((event.spotify_artist ? event.spotify_artist.name : '')));
-				row.append($("<td/>").text(event.event.venue.name || ''));
-				row.append($("<td/>").text(event.datetime_local));
+				row.append($("<td/>").text((artist.top_track ? artist.top_track.name : '')));
+				row.append($("<td/>").text((artist.top_track ? artist.top_track.popularity : '')));
+				row.append($("<td/>").html((artist.spotify_artist && artist.spotify_artist.images.length > 0 ? '<img src="' + artist.spotify_artist.images[0].url + '" height="32px" width="32px"/>' : '')));
+				row.append($("<td/>").text(artist.seatgeek_artist.name || ''));
+				row.append($("<td/>").text((artist.spotify_artist ? artist.spotify_artist.name : '')));
+				row.append($("<td/>").text(artist.event.venue.name || ''));
+				row.append($("<td/>").text(artist.event.datetime_local));
 				row.append($("<td/>").text('Remove'));
 				table.append(row);
 			});
 
 			$('#localtop-output').append(table);
-      */
+      
 	   })
       }
    
       $(document).ready(function(){
-        getEvents();
+        getArtists();
       })
     </script>
     
