@@ -1,65 +1,70 @@
 <!doctype html>
 <html>
   <head>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <style>
-      #key, #localtop-output {
-        border: 1px solid black;
-        padding: 20px;
-        margin: 10px;
-      }
+	  .playlist-table-header {
+		font-weight: bold;
+	  }
     </style>
   </head>
 
   <body>
 
-    <h2>
-      KEY
-    </h2>
-    <div id='key'>      
-    </div>
-
-    <h2>
-      OUTPUT
-    </h2>
-    <div id='localtop-output'>
-    </div>
+	<div class="container">
+		<div class="row">
+			<div id='localtop-output'>
+			</div>
+		</div>
+	</div>
     
-    <script>
-      function getKey() {        
+    <script> 
+	
+      function getEvents() {        
         $.ajax({
           url: '/localtop'
-        }).done((data) => {
-          console.log(data);
-          $('#output').append(data);
-        })
+        }).done((events) => {
+
+          console.log(events);
+           /*
+			var table = $("<table/>").addClass('table table-hover');
+			var header = $('<thead/>').addClass('playlist-table-header');
+			var row = $("<tr/>");
+			row.append($('<td/>').text('Number'));
+			row.append($('<td/>').text('Track Name'));
+			row.append($('<td/>').text('Popularity'));
+			row.append($('<td/>').text('Artist Image'));
+			row.append($('<td/>').text('Seatgeek Artist'));
+			row.append($('<td/>').text('Spotify Artist'));
+			row.append($('<td/>').text('Venue'));
+			row.append($('<td/>').text('Time'));
+			row.append($('<td/>').text('Prune'));
+			header.append(row);
+			table.append(header);
+			
+			events.forEach((event, index) => {
+				var row = $("<tr/>");
+				row.append($("<td/>").text(index + 1));
+				row.append($("<td/>").text((event.top_track ? event.top_track.name : '')));
+				row.append($("<td/>").text((event.top_track ? event.top_track.popularity : '')));
+				row.append($("<td/>").html((event.spotify_artist && event.spotify_artist.images.length > 0 ? '<img src="' + event.spotify_artist.images[0].url + '" height="32px" width="32px"/>' : '')));
+				row.append($("<td/>").text(event.seatgeek_artist.name || ''));
+				row.append($("<td/>").text((event.spotify_artist ? event.spotify_artist.name : '')));
+				row.append($("<td/>").text(event.event.venue.name || ''));
+				row.append($("<td/>").text(event.datetime_local));
+				row.append($("<td/>").text('Remove'));
+				table.append(row);
+			});
+
+			$('#localtop-output').append(table);
+      */
+	   })
       }
-      
-      function syntaxHighlight(json) {
-          if (typeof json != 'string') {
-               json = JSON.stringify(json, undefined, 2);
-          }
-          json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-              var cls = 'number';
-              if (/^"/.test(match)) {
-                  if (/:$/.test(match)) {
-                      cls = 'key';
-                  } else {
-                      cls = 'string';
-                  }
-              } else if (/true|false/.test(match)) {
-                  cls = 'boolean';
-              } else if (/null/.test(match)) {
-                  cls = 'null';
-              }
-              return '<span class="' + cls + '">' + match + '</span>';
-          });
-      }      
-      
+   
       $(document).ready(function(){
-        getKey();
+        getEvents();
       })
     </script>
     
