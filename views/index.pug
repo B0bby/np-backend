@@ -1,0 +1,150 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=Edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    meta(name='keywords', content='')
+    meta(name='description', content='')
+    title='Local Lineup ' + city
+    //
+      Snapshot Template
+      http://www.templatemo.com/tm-493-snapshot
+      Caption Hover Effects
+      http://tympanus.net/codrops/2013/06/18/caption-hover-effects/
+    link(rel='stylesheet', href='includes/css/bootstrap.min.css')
+    link(rel='stylesheet', href='includes/css/animate.min.css')
+    link(rel='stylesheet', href='includes/css/font-awesome.min.css')
+    link(rel='stylesheet', href='includes/css/component.css')
+    link(rel='stylesheet', href='includes/css/owl.theme.css')
+    link(rel='stylesheet', href='includes/css/style.css')
+    // Google web font
+    link(href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,300', rel='stylesheet', type='text/css')
+    link(href='https://fonts.googleapis.com/css?family=Patua+One', rel='stylesheet')
+  body#top(data-spy='scroll', data-offset='50', data-target='.navbar-collapse')
+    // Preloader section
+    .preloader
+      .sk-spinner.sk-spinner-pulse
+    // Navigation section
+    .navbar.navbar-default.navbar-fixed-top(role='navigation')
+      .container
+        .navbar-header
+          button.navbar-toggle(data-toggle='collapse', data-target='.navbar-collapse')
+            span.icon.icon-bar
+            span.icon.icon-bar
+            span.icon.icon-bar
+          a.navbar-brand.smoothScroll(href='#top') Local Lineup
+        .collapse.navbar-collapse
+          ul.nav.navbar-nav.navbar-right
+            li
+              a.smoothScroll(href='#top')
+                span Home
+            li
+              a.smoothScroll(href='#playlist')
+                span Playlist
+            li
+              a.smoothScroll(href='#shows')
+                span Shows
+            li
+              a.smoothScroll(href='#subscribe')
+                span Subscribe
+    // Home section
+    section#home
+      // <div class="overlay"></div>
+      .container
+        .row
+          .col-md-offset-1.col-md-10.col-sm-12.wow.fadeInUp(data-wow-delay='0.3s')
+            h1.wow.fadeInUp(data-wow-delay='0.6s')='Your weekly ' + city + ' playlist'
+            p.wow.fadeInUp(data-wow-delay='0.9s')='One song for each artist performing in ' + city + ' this week, delivered straight to your inbox. If you like a track, get out and check out a live show!'
+            a.smoothScroll.btn.btn-success.btn-lg.wow.fadeInUp(href='#subscribe', data-wow-delay='1.2s') SUBSCRIBE
+    // About section
+    section#playlist
+      .container
+        .row
+          .col-md-6.col-sm-12.wow.fadeInUp(data-wow-delay='0.2s')
+            .about-thumb
+              h1='Week of ' + playlist.start_date + ' - ' + playlist.end_date
+              // p
+                // | This is where a blurb about the artists coming to Nashville will go. It will be short and to the point and summarize the music on the playlist. It will also be included in the email to subscribers. Hopefully it will be well-written.
+          .col-md-6.col-sm-12.wow.fadeInUp(data-wow-delay='0.2s')
+            #spotify-playlist
+              iframe(src='https://embed.spotify.com/?uri=' + playlist.uri, width='300', height='400', frameborder='0', allowtransparency='true')
+    // Shows section
+    section#shows
+      .container
+        .row
+          .col-md-12.col-sm-12.wow.fadeInUp(data-wow-delay='0.3s')
+            .section-title.text-center
+              h1 Nashville This Week
+              h3 Like a track? Go check out the artist live in Nashville this week.
+        each artist in artists
+          .item.col-md-3.col-sm-6.wow.fadeInUp(data-wow-delay='0.4s')
+            .team-thumb
+              .image-holder
+                img.img-responsive.img-circle(src=artist.spotify_artist.images[0].url, alt=artist.spotify_artist.name)
+              .description
+                a(href=artist.event.url, target='_blank').btn.btn-success Tickets
+              h2.heading=artist.spotify_artist.name
+              p='@ ' + artist.event.venue.name
+                br
+                | Wed 5/24 7pm
+    // Subscribe section
+    section#subscribe
+      .container
+        .row
+          .col-md-offset-1.col-md-10.col-sm-12
+            .col-lg-offset-1.col-lg-10.section-title.wow.fadeInUp(data-wow-delay='0.4s')
+              h1 Join the mailing list
+              p
+                | Get a playlist in your inbox every Sunday. Discover new local music every week. Get out and see some shows.
+            
+			
+            // Begin MailChimp Signup Form
+            // Nashville Mailchimp signup ID = f7c946a5f4, Indy = 4578cbbf91
+            #mc_embed_signup
+              form#mc-embedded-subscribe-form.validate.wow.fadeInUp(action='//coderx.us15.list-manage.com/subscribe/post?u=2c6bf7155d6aeffd3c73e6ad6&id=f7c946a5f4', method='post', name='mc-embedded-subscribe-form', data-wow-delay='0.8s', target='_blank', novalidate='')
+                #mc_embed_signup_scroll
+                  .mc-field-group
+                    input#mce-EMAIL.required.email.form-control(type='email', value='', name='EMAIL', placeholder='Email')
+                  #mce-responses.clear
+                    #mce-error-response.response(style='display:none')
+                    #mce-success-response.response(style='display:none')
+                  // real people should not fill this in and expect good things - do not remove this or risk form bot signups
+                  div(style='position: absolute; left: -5000px;', aria-hidden='true')
+                    input(type='text', name='b_2c6bf7155d6aeffd3c73e6ad6_b7ca48861d', tabindex='-1', value='')
+                  .clear
+                    input#mc-embedded-subscribe.form-control(type='submit', value='Subscribe', name='subscribe')
+            script(type='text/javascript', src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js')
+            script(type='text/javascript').
+              (function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]='EMAIL';ftypes[0]='email';}(jQuery));var $mcj = jQuery.noConflict(true);
+
+            // End mc_embed_signup
+			
+    // Footer section
+    footer
+      .container
+        .row
+          .col-md-12.col-sm-12
+            ul.social-icon
+              li
+                a.fa.fa-facebook.wow.fadeInUp(href='#', data-wow-delay='0.2s')
+              li
+                a.fa.fa-twitter.wow.fadeInUp(href='#', data-wow-delay='0.4s')
+              li
+                a.fa.fa-instagram.wow.fadeInUp(href='#', data-wow-delay='0.8s')
+              li
+                a.fa.fa-envelope-o.wow.fadeInUp(href='#', data-wow-delay='0.6s')
+            p.wow.fadeInUp(data-wow-delay='1s')
+              | Made with 🍅 in East Nashville
+    // Back top
+    a.go-top(href='#')
+      i.fa.fa-angle-up
+    // Javascript
+    script(src='includes/js/jquery.js')
+    script(src='includes/js/bootstrap.min.js')
+    script(src='includes/js/modernizr.custom.js')
+    script(src='includes/js/toucheffects.js')
+    script(src='includes/js/owl.carousel.min.js')
+    script(src='includes/js/smoothscroll.js')
+    script(src='includes/js/wow.min.js')
+    script(src='includes/js/custom.js')
