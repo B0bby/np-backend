@@ -1,0 +1,32 @@
+doctype html
+html
+	head
+		title="Local Lineup Playlists"
+		link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css', integrity='sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u', crossorigin='anonymous')
+		link(rel='stylesheet', href='https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css')
+	body
+		h1=city
+		
+		table(class='table', id='playlist-table')
+			thead
+				tr
+					th='ID'
+					th='Name'
+					th='Start Date'
+					th='End Date'
+					th='Prune'
+			tbody
+				each playlist, index in playlists
+					tr(object-id=playlist._id)
+						td=playlist.id
+						td
+							a(href='../../admin/playlists/' + playlist.id)=playlist.name
+						td=playlist.start_date || ''
+						td=playlist.end_date || ''
+						td
+							button(class='btn btn-link remove-button')='Remove'
+					
+		script(src='https://code.jquery.com/jquery-1.12.4.js')
+		script(src='https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js')
+		script
+			include includes/js/playlists.js

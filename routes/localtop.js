@@ -4,27 +4,46 @@ var express = require('express');
 var request = require('request');
 var dateFormat = require('dateformat');
 var secrets = require('../secrets.js');
+var fs = require('fs');
 
 var router = express.Router();
 
-var artists = [];              // events contains all information (spotify_artist, top_track, etc)
+var artists = [];              // artists contains all information (spotify_artist, top_track, etc)
 var playlist = [];            // playlist contains information about the playlist
 
+var cities = [
+	{ 
+		name: 'Chicago',
+		latitude: '41.8781',
+		longitude: '-87.6298',
+		playlistBaseName: 'Local Lineup Chicago'
+	},
+	{ 
+		name: 'Indianapolis',
+		latitude: '39.7684',
+		longitude: '-86.1581',
+		playlistBaseName: 'Local Lineup Indianapolis'
+	},
+	{ 
+		name: 'Nashville',
+		latitude: '36.1627',
+		longitude: '-86.7816',
+		playlistBaseName: 'Local Lineup Nashville'
+	},
+	{ 
+		name: 'Columbus',
+		latitude: '39.9612',
+		longitude: '-82.9988',
+		playlistBaseName: 'Local Lineup Columbus'
+	}
+];
 
-var latitude = '41.8781';
-var longitude = '-87.6298';
-var playlistBaseName = 'Windy City Playlist';
+var cityIndex = 3; // Nashville
 
-var latitude = '39.7684';
-var longitude = '-86.1581';
-var playlistBaseName = 'Indy Weekly Playlist';
-
-var latitude = '36.1627';     // Nashville latitutde/longitude
-var longitude = '-86.7816';   // default range in Seatgeek query is 30 mi
-var playlistBaseName = 'Music City Playlist';
-
-var startDate = '2017-06-25'; // needs to be in YYYY-MM-DD format
-var endDate = '2017-07-01';   // needs to be in YYYY-MM-DD format
+var startDate = '2017-07-10'; // needs to be in YYYY-MM-DD format
+var endDate = '2017-07-16';   // needs to be in YYYY-MM-DD format
+var prettyStartDate = dateFormat(removeTimeZoneUTC(startDate), 'm/d');
+var prettyEndDate = dateFormat(removeTimeZoneUTC(endDate), 'm/d');
 
 router.get('/', function(req, res) { 
 
@@ -47,24 +66,43 @@ router.get('/', function(req, res) {
         });
       
         topTracksPromise.then(() => {
+		  artists.forEach((a, i) => {
+			  if (!a.top_track) delete artists[i];
+		  });
 	      console.log('Top tracks done.');
 		  let playlistPromise = new Promise((resolve, reject) => {
 	        createPlaylist(resolve);
 		  });
 		  
-		  playlistPromise.then(() => { 
+		  playlistPromise.then(() => {
 	        console.log('Playlist done.');
-		    saveArtists();
-			savePlaylist();
 		    let addTracksPromise = new Promise((resolve, reject) => {
 	          addTracks(resolve);
 		    });
 		  
 	        addTracksPromise.then(() => {
-				res.json(artists);
+			  console.log('Add tracks done.');
+			  let savePlaylistPromise = new Promise((resolve, reject) => {
+			    savePlaylist(resolve);
+			  });
+     	       
+			   savePlaylistPromise.then(() => {
+			     console.log('Save playlist done.');
+			     let saveArtistsPromise = new Promise((resolve, reject) => {
+			       saveArtists(resolve);
+			     });
+				 
+			       saveArtistsPromise.then(() => {
+			         console.log('Save artists done.');
+				     res.send('http://localhost:3000/admin/playlists/' + playlist.id);		
+			       });
+				   
+			   });
+
             });
 
 		});
+		
       })
 	  
     });
@@ -73,43 +111,61 @@ router.get('/', function(req, res) {
 });
 
 
-function saveArtists() {
-	artists.forEach(a => {
+function saveArtists(callback) {
+  let requests = artists.reduce((promiseChain, artist) => {
+    return promiseChain.then(() => new Promise((resolve) => {
 		var ops = {
 			url: 'http://localhost:3000/artists',
-			json: a
+			json: artist
 		};
 		
 	  request.post(ops, (err, res, body) => {
 		if (err) return console.log(err)
-		console.log('Saved artists success.');
+	    resolve();
 	  });
-	});
+    }));
+  }, Promise.resolve());  
+  
+  requests.then(() => {
+    callback();
+  })
 }
 
-function savePlaylist() {
+function savePlaylist(callback) {
+  var ops = {
+	 url: 'https://api.spotify.com/v1/users/' + secrets.spotify_user_id() + '/playlists/' + playlist.id,
+	 headers: { 'Authorization': 'Bearer ' + secrets.token() }
+	} 
+	
+  request.get(ops, (err, res, body) => {
+    playlist = JSON.parse(body); 
+	playlist.city = cities[cityIndex].name.toLowerCase();
+	playlist.start_date = prettyStartDate;
+	playlist.end_date = prettyEndDate;
+
 	var ops = {
 		url: 'http://localhost:3000/playlists',
 		json: playlist
 	};
-	
-  request.post(ops, (err, res, body) => {
-	if (err) return console.log(err)
-	console.log('Saved playlist success.');
+  
+	request.post(ops, (err, res, body) => { 
+		if (err) return console.log(err)
+		callback();
+	});
   });
 }
-
 
 function getLocalEvents(callback) {
   var ops = {
 	// Note: default search radius around lat/lon is 30 mi - this should even hit Franklin, TN
 	//       datetime_local format is YYYY-MM-DDTHH:MM:SS - startDate is 00:00:00 and endDate is 23:59:59
-    url: 'https://api.seatgeek.com/2/events?lat=' + latitude + '&lon=' + longitude + '&per_page=500&datetime_local.gte=' + startDate + 'T00:00:00&datetime_local.lte=' + endDate + 'T23:59:59&taxonomies.name=concert&taxonomies.name=concerts&client_id=' + secrets.seatgeek_client_id()
+    url: 'https://api.seatgeek.com/2/events?lat=' + cities[cityIndex].latitude + '&lon=' + cities[cityIndex].longitude + '&per_page=500&datetime_local.gte=' + startDate + 'T00:00:00&datetime_local.lte=' + endDate + 'T23:59:59&taxonomies.name=concert&taxonomies.name=concerts&client_id=' + secrets.seatgeek_client_id()
   }
   
   request.get(ops, (error, result, body) => {
     var events = JSON.parse(body).events;
 	events.forEach((e, i) => {
+		e.datetime_pretty = dateFormat(removeTimeZoneUTC(e.datetime_local), 'ddd, m/d htt');
 		var event = { event: e };
 		artists.push(event);
 	});
@@ -149,7 +205,7 @@ function getSpotifyArtist(artist, callback) {
     headers: { 'Authorization': 'Bearer ' + secrets.token() },
   }
   request.get(ops, (err, res, body) => {
-	// JRL: I added this because it was pulling in some undefined artists
+	// JRL: I added this because it was pulling in some undefined artists 
 	var spotifyArtist = JSON.parse(body).artists.items[0] || null;
 	if (spotifyArtist) {
 		artists.find((a, i) => {
@@ -192,7 +248,7 @@ function getTopTrack(artist, callback) {
 }
 
 function createPlaylist(callback) {
-  var playlistName = playlistBaseName + ' ' + dateFormat(startDate, 'm/d') + '-' + dateFormat(endDate, 'm/d');
+  var playlistName = cities[cityIndex].playlistBaseName + ' ' + prettyStartDate + '-' + prettyEndDate;
   var ops = {
 	 url: 'https://api.spotify.com/v1/users/' + secrets.spotify_user_id() + '/playlists',
 	 json: { 'name': playlistName, 'public': false },
@@ -223,6 +279,10 @@ function addTracks(callback) {
     callback();
   }) 
    
+}
+
+function removeTimeZoneUTC(dateTime) {
+	return new Date(dateTime).toUTCString().replace(/\s*(GMT|UTC)$/, '');
 }
 
 module.exports = router;
