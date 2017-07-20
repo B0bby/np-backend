@@ -1,0 +1,59 @@
+doctype html
+html
+	head
+		title="Local Lineup Artists"
+		link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css', integrity='sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u', crossorigin='anonymous')
+		link(rel='stylesheet', href='https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css')
+	body
+		table(class='table', id='playlist-table')
+			thead
+				tr
+					th='ID'
+					th='Name'
+					th='URL'
+					th='Public?'
+					th='Create Campaign'
+			tbody
+				tr(object-id=playlist._id, playlist-id=playlist.id)
+					td=playlist.id
+					td=playlist.name
+					td
+						a(href=playlist.external_urls.spotify, target='_blank')=playlist.external_urls.spotify
+					td=playlist.public
+					td
+						button(class='btn btn-success', id='create-campaign-button')='Create Campaign'
+					
+		table(class='table', id='artists-table')
+			thead
+				tr
+					th='Number'
+					th='Track Name'
+					th='Popularity'
+					th='Artist Image'
+					th='Seatgeek Artist'
+					th='Spotify Artist'
+					th='Venue'
+					th='Time'
+					th='Prune'
+			tbody
+				each artist, index in artists
+					tr(object-id=artist._id, playlist-id=artist.playlist_id, track-id=artist.top_track ? artist.top_track.uri : '')
+						td=index+1
+						td=(artist.top_track ? artist.top_track.name : '')
+						td=(artist.top_track ? artist.top_track.popularity : '')
+						if artist.spotify_artist && artist.spotify_artist.images.length > 0
+							td
+								img(src=artist.spotify_artist.images[0].url, height='32px', width='32px')
+						else
+							td
+						td=(artist.seatgeek_artist.name || '')
+						td=(artist.spotify_artist ? artist.spotify_artist.name : '')
+						td
+							a(href=artist.event.venue.url)=artist.event.venue.name
+						td(title=artist.event)=artist.event.datetime_pretty
+						td
+							button(class='btn btn-link remove-button')='Remove'
+		script(src='https://code.jquery.com/jquery-1.12.4.js')
+		script(src='https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js')
+		script
+			include includes/js/artists.js
