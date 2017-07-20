@@ -7,6 +7,8 @@ html
 	body
 		h1=city
 		
+		button(id='create-playlist', class='btn btn-success')='NEW PLAYLIST'
+		
 		table(class='table', id='playlist-table')
 			thead
 				tr
@@ -17,7 +19,7 @@ html
 					th='Prune'
 			tbody
 				each playlist, index in playlists
-					tr(object-id=playlist._id)
+					tr(object-id=playlist._id, playlist-id=playlist.id)
 						td=playlist.id
 						td
 							a(href='../../admin/playlists/' + playlist.id)=playlist.name

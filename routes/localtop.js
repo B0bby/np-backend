@@ -8,278 +8,181 @@ var fs = require('fs');
 
 var router = express.Router();
 
-var artists = [];              // artists contains all information (spotify_artist, top_track, etc)
 var playlist = [];            // playlist contains information about the playlist
+							  // TODO: get rid of playlist collections, just use Spotify to store this info
 
-var cities = [
-	{ 
-		name: 'Chicago',
-		latitude: '41.8781',
-		longitude: '-87.6298',
-		playlistBaseName: 'Local Lineup Chicago'
-	},
-	{ 
-		name: 'Indianapolis',
-		latitude: '39.7684',
-		longitude: '-86.1581',
-		playlistBaseName: 'Local Lineup Indianapolis'
-	},
-	{ 
-		name: 'Nashville',
-		latitude: '36.1627',
-		longitude: '-86.7816',
-		playlistBaseName: 'Local Lineup Nashville'
-	},
-	{ 
-		name: 'Columbus',
-		latitude: '39.9612',
-		longitude: '-82.9988',
-		playlistBaseName: 'Local Lineup Columbus'
-	}
-];
+var artists = [];
+var city;
 
-var cityIndex = 3; // Nashville
-
-var startDate = '2017-07-10'; // needs to be in YYYY-MM-DD format
-var endDate = '2017-07-16';   // needs to be in YYYY-MM-DD format
+var cityName = 'columbus';
+var playlistBaseName = 'Local Lineup';
+var startDate = '2017-07-24'; // needs to be in YYYY-MM-DD format
+var endDate = '2017-07-30';   // needs to be in YYYY-MM-DD format
 var prettyStartDate = dateFormat(removeTimeZoneUTC(startDate), 'm/d');
 var prettyEndDate = dateFormat(removeTimeZoneUTC(endDate), 'm/d');
 
 router.get('/', function(req, res) { 
-
-  let eventPromise = new Promise((resolve, reject) => {
-    getLocalEvents(resolve);
-  });
-  
-  eventPromise.then(() => {
-	console.log('Events done.');
-	parseSeatgeekArtists();
-	console.log('Seatgeek artists done.');
-    let spotifyArtistPromise = new Promise((resolve, reject) => {
-      getSpotifyArtists(resolve);
-    });
-    
-	  spotifyArtistPromise.then(() => {
-	    console.log('Spotify artists done.');
-        let topTracksPromise = new Promise((resolve, reject) => {
-          getTopTracks(resolve);
-        });
-      
-        topTracksPromise.then(() => {
-		  artists.forEach((a, i) => {
-			  if (!a.top_track) delete artists[i];
-		  });
-	      console.log('Top tracks done.');
-		  let playlistPromise = new Promise((resolve, reject) => {
-	        createPlaylist(resolve);
-		  });
-		  
-		  playlistPromise.then(() => {
-	        console.log('Playlist done.');
-		    let addTracksPromise = new Promise((resolve, reject) => {
-	          addTracks(resolve);
-		    });
-		  
-	        addTracksPromise.then(() => {
-			  console.log('Add tracks done.');
-			  let savePlaylistPromise = new Promise((resolve, reject) => {
-			    savePlaylist(resolve);
-			  });
-     	       
-			   savePlaylistPromise.then(() => {
-			     console.log('Save playlist done.');
-			     let saveArtistsPromise = new Promise((resolve, reject) => {
-			       saveArtists(resolve);
-			     });
-				 
-			       saveArtistsPromise.then(() => {
-			         console.log('Save artists done.');
-				     res.send('http://localhost:3000/admin/playlists/' + playlist.id);		
-			       });
-				   
-			   });
-
-            });
-
-		});
-		
-      })
-	  
-    });
-
-  });
-});
-
-
-function saveArtists(callback) {
-  let requests = artists.reduce((promiseChain, artist) => {
-    return promiseChain.then(() => new Promise((resolve) => {
-		var ops = {
-			url: 'http://localhost:3000/artists',
-			json: artist
-		};
-		
-	  request.post(ops, (err, res, body) => {
-		if (err) return console.log(err)
-	    resolve();
-	  });
-    }));
-  }, Promise.resolve());  
-  
-  requests.then(() => {
-    callback();
-  })
-}
-
-function savePlaylist(callback) {
-  var ops = {
-	 url: 'https://api.spotify.com/v1/users/' + secrets.spotify_user_id() + '/playlists/' + playlist.id,
-	 headers: { 'Authorization': 'Bearer ' + secrets.token() }
-	} 
+	var ops;
 	
-  request.get(ops, (err, res, body) => {
-    playlist = JSON.parse(body); 
-	playlist.city = cities[cityIndex].name.toLowerCase();
-	playlist.start_date = prettyStartDate;
-	playlist.end_date = prettyEndDate;
+	// Get city info
+	ops = { url: 'http://localhost:3000/api/v1/cities/' + cityName };
+	request.get(ops, (err, result, body) => {
+		if (err) return console.log(err);
+		city = JSON.parse(body);
+		console.log('City done.');
 
-	var ops = {
-		url: 'http://localhost:3000/playlists',
-		json: playlist
-	};
-  
-	request.post(ops, (err, res, body) => { 
-		if (err) return console.log(err)
-		callback();
-	});
-  });
-}
-
-function getLocalEvents(callback) {
-  var ops = {
-	// Note: default search radius around lat/lon is 30 mi - this should even hit Franklin, TN
-	//       datetime_local format is YYYY-MM-DDTHH:MM:SS - startDate is 00:00:00 and endDate is 23:59:59
-    url: 'https://api.seatgeek.com/2/events?lat=' + cities[cityIndex].latitude + '&lon=' + cities[cityIndex].longitude + '&per_page=500&datetime_local.gte=' + startDate + 'T00:00:00&datetime_local.lte=' + endDate + 'T23:59:59&taxonomies.name=concert&taxonomies.name=concerts&client_id=' + secrets.seatgeek_client_id()
-  }
-  
-  request.get(ops, (error, result, body) => {
-    var events = JSON.parse(body).events;
-	events.forEach((e, i) => {
-		e.datetime_pretty = dateFormat(removeTimeZoneUTC(e.datetime_local), 'ddd, m/d htt');
-		var event = { event: e };
-		artists.push(event);
-	});
-    callback();
-  })
-}
-
-function parseSeatgeekArtists() {
-	artists.forEach((a, i) => {
-	if (a.event.performers) {
-		a.event.performers.forEach((p) => {
-			if (p.primary) {
-			  artists[i].seatgeek_artist = p;
-			  delete artists[i].event.performers;
+		// get Seatgeek event / artist info
+		ops = {
+			url: 'http://localhost:3000/api/v1/seatgeek-events',
+			json: {
+				city: city,
+				start_date: startDate,
+				end_date: endDate
 			}
-		  });
-	}
-  });
-}
+		};	
+		request.get(ops, (err, result, body) => {
+			if (err) return console.log(err)
+			artists = body;
+			console.log('Seatgeek events and artists done.');
+			
+			// get Spotify artist info	
+			// TODO: make this loop through the artists on the server side
+			let requests = artists.reduce((promiseChain, artist) => {
+				return promiseChain.then(() => new Promise((resolve) => {
+					ops = {
+						url: 'http://localhost:3000/api/v1/spotify-artists',
+						json: { name: artist.seatgeek_artist.name }
+					}
+					request.get(ops, (err, result, body) => {
+						if (err) return console.log(err)
+						// JRL: I added this because it was pulling in some undefined artists 
+						var spotifyArtist = body;
+						if (spotifyArtist) {
+							artists.find((a, i) => {
+								if (a.event.id == artist.event.id) artists[i].spotify_artist = spotifyArtist;
+							}); 
+						}
+						resolve();
+					});
+				}));
+			}, Promise.resolve());  
 
-function getSpotifyArtists(callback) {
-  let requests = artists.reduce((promiseChain, artist) => {
-    return promiseChain.then(() => new Promise((resolve) => {
-      getSpotifyArtist(artist, resolve);
-    }));
-  }, Promise.resolve());  
-  
-  requests.then(() => {
-    callback();
-  })
-}
+			requests.then(() => {
+				console.log('Spotify artists done.');
+				// TODO: do stuff somewhere around here to flag artists as not needing songs?
+				
+				// get Spotify track info
+				// TODO: make this loop through the artists on the server side
+				let requests = artists.reduce((promiseChain, artist) => {
+					return promiseChain.then(() => new Promise((resolve) => {
+						if (artist.spotify_artist) {
+							ops = {
+								url: 'http://localhost:3000/api/v1/spotify-tracks',
+								json: { artist_id: artist.spotify_artist.id }
+							}
+							request.get(ops, (err, result, body) => {
+								if (err) return console.log(err)
+								// JRL: I added this because it was pulling in some undefined tracks
+								var track = body;
+								if (track) {
+									artists.find((a, i) => {
+										if (a.event.id == artist.event.id) artists[i].top_track = track;
+									});
+								};
+								resolve();
+							});
+						} else { resolve(); } // if seatgeek_artist does not have a matching spotify_artist
+					}));
+				}, Promise.resolve());
 
-function getSpotifyArtist(artist, callback) { 
-  var ops = {
-    url: 'https://api.spotify.com/v1/search',
-    qs: { q: artist.seatgeek_artist.name, type: 'artist' },
-    headers: { 'Authorization': 'Bearer ' + secrets.token() },
-  }
-  request.get(ops, (err, res, body) => {
-	// JRL: I added this because it was pulling in some undefined artists 
-	var spotifyArtist = JSON.parse(body).artists.items[0] || null;
-	if (spotifyArtist) {
-		artists.find((a, i) => {
-			if (a.event.id == artist.event.id) artists[i].spotify_artist = spotifyArtist;
-		}); 
-	} 
-    callback();
-  })  
-}
+				requests.then(() => {	
+					artists.forEach((a, i) => {
+						if (!a.top_track) delete artists[i];
+					});
+					console.log('Top tracks done.');
+					
+					// create Spotify playlist
+					var playlistName = playlistBaseName + ' ' + city.name + ' ' + prettyStartDate + '-' + prettyEndDate;
+					ops = {
+						url: 'http://localhost:3000/api/v1/spotify-playlists',
+						json: { 'playlist_name': playlistName }
+					}
+					request.post(ops, (err, result, body) => {
+						playlist = body; 
+						artists.forEach((a, i) => {
+							a.playlist_id = playlist.id;
+						});
 
-function getTopTracks(callback) {
-  let requests = artists.reduce((promiseChain, artist) => {
-    return promiseChain.then(() => new Promise((resolve) => {
-      if (artist.spotify_artist) { 
-		getTopTrack(artist, resolve);
-	  } else { resolve(); }
-    }));
-  }, Promise.resolve());
+						console.log('Playlist done.');
+						
+						// add tracks to Spotify playlist
+						var trackUris = [];
+						artists.forEach((a) => {
+							if (a.top_track) trackUris.push(a.top_track.uri);
+						});
 
-  requests.then(() => {
-    callback();
-  });
-}
+						var ops = {
+							url: 'http://localhost:3000/api/v1/spotify-tracks',
+							json: {
+								'playlist_id': playlist.id,
+								'track_uris': trackUris
+							}
+						}
+						request.post(ops, (err, result, body) => {
+							if (err) return console.log(err);
+							console.log('Add tracks done.');
+							
+							// get Spotify playlist again (after tracks were added)
+							// then add some extra details and save a Local Lineup playlist version
+							ops = {
+								url: 'http://localhost:3000/api/v1/spotify-playlists',
+								json: { 'playlist_id': playlist.id }
+							}
+							request.get(ops, (err, result, body) => {
+								playlist = body; 
+								playlist.city = city.name.toLowerCase();
+								playlist.start_date = prettyStartDate;
+								playlist.end_date = prettyEndDate;
 
-function getTopTrack(artist, callback) {
-  var ops = {
-	url: 'https://api.spotify.com/v1/artists/' + artist.spotify_artist.id + '/top-tracks?country=US',
-	headers: { 'Authorization': 'Bearer ' + secrets.token() },
-  }
-  request.get(ops, (err, res, body) => {    
-	// JRL: I added this because it was pulling in some undefined tracks
-	var track = JSON.parse(body).tracks[0] || null;
-	if (track) {
-		artists.find((a, i) => {
-			if (a.event.id == artist.event.id) artists[i].top_track = track;
+								ops = {
+									url: 'http://localhost:3000/api/v1/playlists',
+									json: playlist
+								}
+								request.post(ops, (err, result, body) => { 
+									if (err) return console.log(err);
+
+									console.log('Save playlist done.');
+									
+									// save all the Local Lineup artist information
+									let requests = artists.reduce((promiseChain, artist) => {
+										return promiseChain.then(() => new Promise((resolve) => {
+											var ops = {
+												url: 'http://localhost:3000/api/v1/artists',
+												json: artist
+											};
+
+											request.post(ops, (err, result, body) => {
+												if (err) return console.log(err)
+												resolve();
+											});
+										}));
+									}, Promise.resolve());  
+
+									requests.then(() => {
+								
+										console.log('Save artists done.');
+										res.json('http://localhost:3000/admin/playlists/' + playlist.id);		
+
+									});
+								});
+							});	
+						});
+					});
+				});
+			});
 		});
-	}
-	callback();
-  })
-}
-
-function createPlaylist(callback) {
-  var playlistName = cities[cityIndex].playlistBaseName + ' ' + prettyStartDate + '-' + prettyEndDate;
-  var ops = {
-	 url: 'https://api.spotify.com/v1/users/' + secrets.spotify_user_id() + '/playlists',
-	 json: { 'name': playlistName, 'public': false },
-	 headers: { 'Authorization': 'Bearer ' + secrets.token(), 'Content-Type': 'application/json' },
-	}
-  request.post(ops, (err, res, body) => {
-    playlist = body; 
-	artists.forEach((a, i) => {
-		a.playlist_id = playlist.id;
 	});
-    callback(); 
-  }) 
-}
-
-
-function addTracks(callback) {
-  var trackUris = [];
-	artists.forEach((a) => {
-	if (a.top_track) trackUris.push(a.top_track.uri);
-  });
-  
-  var ops = {
-	 url: 'https://api.spotify.com/v1/users/' + secrets.spotify_user_id() + '/playlists/' + playlist.id + '/tracks',
-	 json: { 'uris': trackUris },
-	 headers: { 'Authorization': 'Bearer ' + secrets.token(), 'Content-Type': 'application/json' },
-	}
-  request.post(ops, (err, res, body) => {
-    callback();
-  }) 
-   
-}
+});
 
 function removeTimeZoneUTC(dateTime) {
 	return new Date(dateTime).toUTCString().replace(/\s*(GMT|UTC)$/, '');
